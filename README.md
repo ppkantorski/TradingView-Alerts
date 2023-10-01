@@ -1,4 +1,4 @@
-# TradingViewAlerts
+# TradingView Alerts
 
 TradingViewAlerts is a Python script that allows you to automate the process of reading and processing alerts from TradingView and taking actions based on those alerts.
 
