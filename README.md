@@ -38,7 +38,6 @@ To use TradingViewAlerts, follow these installation steps:
 
 3. Install the required Python dependencies.
 
-   ```pip install -r requirements.txt```
 
 ## Usage
 
