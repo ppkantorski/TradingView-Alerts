@@ -53,9 +53,9 @@ To use TradingViewAlerts, follow these installation steps:
 
 The `config.json` file is used to configure the behavior of TradingViewAlerts. You can define the following parameters:
 
-   - `STRATEGY_COLUMNS`: List of columns to include in the strategy data.
-   - `CREDENTIALS_FILE`: The file containing your TradingView API credentials.
-   - `TOKEN_FILE`: The file used to store authentication tokens.
+- `STRATEGY_COLUMNS`: List of columns to include in the strategy data.
+- `CREDENTIALS_FILE`: The file containing your TradingView API credentials.
+- `TOKEN_FILE`: The file used to store authentication tokens.
 
 Example `config.json`:
 
