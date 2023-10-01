@@ -1,0 +1,16 @@
+{
+    "STRATEGY_COLUMNS": [
+        "Source",
+        "Presets",
+        "Message",
+        "Timestamp",
+        "Timeframe",
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Volume"
+    ],
+    "CREDENTIALS_FILE": "client_secret.apps.googleusercontent.com.json",
+    "TOKEN_FILE": "token.json"
+}
