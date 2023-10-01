@@ -31,11 +31,11 @@ To use TradingViewAlerts, follow these installation steps:
 
 2. Navigate to the project directory.
 
-```cd TradingViewAlerts```
+   ```cd TradingViewAlerts```
 
 3. Install the required Python dependencies.
 
-```pip install -r requirements.txt```
+   ```pip install -r requirements.txt```
 
 ## Usage
 
@@ -43,7 +43,7 @@ To use TradingViewAlerts, follow these installation steps:
 
 2. Run the script.
 
-```python tradingview_alerts.py```
+    ```python tradingview_alerts.py```
 
 3. The script will continuously monitor your TradingView alerts and execute actions based on the configured rules.
 
@@ -53,9 +53,9 @@ To use TradingViewAlerts, follow these installation steps:
 
 The `config.json` file is used to configure the behavior of TradingViewAlerts. You can define the following parameters:
 
-- `STRATEGY_COLUMNS`: List of columns to include in the strategy data.
-- `CREDENTIALS_FILE`: The file containing your TradingView API credentials.
-- `TOKEN_FILE`: The file used to store authentication tokens.
+   - `STRATEGY_COLUMNS`: List of columns to include in the strategy data.
+   - `CREDENTIALS_FILE`: The file containing your TradingView API credentials.
+   - `TOKEN_FILE`: The file used to store authentication tokens.
 
 Example `config.json`:
 
