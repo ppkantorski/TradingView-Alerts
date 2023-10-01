@@ -3,7 +3,7 @@
 TradingViewAlerts is a Python script that allows you to automate the process of reading and processing alerts from TradingView and taking actions based on those alerts.
 
 ![SQL Database](https://github.com/ppkantorski/TradingViewAlerts/blob/main/.demo/SQL%20Database.png)
-![Telegram Bot](https://github.com/ppkantorski/TradingViewAlerts/blob/main/.demo/Telegram%20Bot.png)
+![Telegram](https://github.com/ppkantorski/TradingViewAlerts/blob/main/.demo/Telegram.png)
 
 ## Table of Contents
 - [About](#about)
