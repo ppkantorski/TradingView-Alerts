@@ -79,32 +79,19 @@ Example `config.json`:
 ```
 
 ### `telegram_config.json`
-In addition to `config.json`, you can also configure Telegram integration using the `telegram_config.json` file. This file allows you to set up and manage multiple Telegram accounts for receiving alerts or sending commands.
+In addition to `config.json`, you can also configure Telegram integration using the `telegram_config.json` file. This file allows you to set up and manage your Telegram bot's API credentials.
 
 Example `telegram_config.json`:
 ```json
 {
-    "accounts": [
-        {
-            "account_name": "Account 1",
-            "api_key": "YOUR_API_KEY_1",
-            "chat_id": "CHAT_ID_1"
-        },
-        {
-            "account_name": "Account 2",
-            "api_key": "YOUR_API_KEY_2",
-            "chat_id": "CHAT_ID_2"
-        }
-    ]
+    "chat_id": "-100000000",
+    "token": "123456789:abcdefghijklmnop"
 }
 ```
 
-In this example, you can configure multiple Telegram accounts, each with its own API key and chat ID. This allows you to have multiple people receive information and send commands to the TradingViewAlerts bot.
+In this example, you should provide your specific Telegram bot's `chat_id` and `token`. These values are essential for configuring the Telegram integration correctly.
 
-Make sure to customize the `telegram_config.json` file according to your specific Telegram integration requirements.
-
-
-
+Please make sure to customize the `telegram_config.json` file with your Telegram bot's specific `chat_id` and `token` according to your requirements.
 
 
 ## Contributing
