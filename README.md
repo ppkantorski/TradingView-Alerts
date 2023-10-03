@@ -103,7 +103,3 @@ Contributions are welcome! If you have any ideas, improvements, or bug fixes, pl
 ## License
 
 This project is licensed under the [CC-BY-NC-4.0 License](LICENSE).
-
-Copyright (c) 2023 ppkantorski
-
-All rights reserved.
