@@ -19,6 +19,9 @@ from datetime import datetime, timedelta
 from pprint import pprint
 import json
 
+# Change working directory to location of script
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
 class TradingViewAlertsHandler:
     def __init__(self):
         self.STRATEGY_COLUMNS = []
