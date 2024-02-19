@@ -1,5 +1,5 @@
 __author__ = "Patrick Kantorski"
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __maintainer__ = "Patrick Kantorski"
 __status__ = "Development Build"
 
@@ -30,6 +30,7 @@ class TradingViewAlertsHandler:
         self.SQL_COLUMNS = ['message_id', 'msg_timestamp', 'alert']
         self.SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
         self.EMAIL_SENDER = "TradingView <noreply@tradingview.com>"
+        self.N_DAYS = 10
         self.start = False
         self.kill_daemon = False
         self.initial_run = True
@@ -58,11 +59,16 @@ class TradingViewAlertsHandler:
         while not self.start:
             time.sleep(1)
         
-        while True:
-            if not self.message_queue.empty():
-                message = self.message_queue.get()
-                self.notify_command(message)
-                time.sleep(2)  # Adjust the delay as needed
+        while not self.kill_daemon:
+            try:
+                if not self.message_queue.empty():
+                    print("Sending message...")
+                    message = self.message_queue.get()
+                    self.notify_command(message)
+                    time.sleep(2)  # Adjust the delay as needed
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                self.kill_daemon = True
     
     
     def extract_info_from_message(self, message_text):
@@ -98,8 +104,7 @@ class TradingViewAlertsHandler:
         service = build('gmail', 'v1', credentials=creds)
 
         # Calculate the timestamp for n days ago
-        N_DAYS = 1
-        n_days_ago = datetime.now() - timedelta(days=N_DAYS)
+        n_days_ago = datetime.now() - timedelta(days=self.N_DAYS)
         
         
         # Connect to the SQLite database
@@ -137,6 +142,7 @@ class TradingViewAlertsHandler:
         base_delay = 3  # Initial delay in seconds
         results = None
         
+        messages = []
         while retries < max_retries:
             try:
                 # Your existing code for fetching messages
@@ -154,13 +160,14 @@ class TradingViewAlertsHandler:
                     time.sleep(delay)
                 else:
                     print("Max retries reached. Exiting.")
+                    self.kill_daemon = True
                     break
         
         
         
         alert_found = False
         
-        if messages:
+        if len(messages) > 0:
             
             for message in messages:
                 msg_id = message['id']
@@ -254,6 +261,10 @@ class TradingViewAlertsHandler:
                     print(line)
                     # self.notify_command(line)
                     self.message_queue.put(line)
+                
+                #print(line)
+                ## self.notify_command(line)
+                #self.message_queue.put(line)
             
             # Update the last_checked_id with the latest message_id
             last_checked_id = new_records[-1][0]
@@ -276,27 +287,32 @@ class TradingViewAlertsHandler:
             if not alert_found and no_alerts_counter > 0:
                 delete_last_line(2)
             
-            alert_found = self.authenticate_and_fetch_alerts()
-        
-            if not alert_found:
-                self.initial_run = False
-                no_alerts_counter += 1
-            else:
-                no_alerts_counter = 0
-        
-            # Calculate the number of seconds remaining in the current minute
-            current_time = datetime.now()
-            seconds_until_next_minute = 60 - current_time.second
-            seconds_until_next_minute += OFFSET
-            wait_time = seconds_until_next_minute % 11
-            if wait_time < 2:
-                time.sleep(wait_time+1)
+            try:
+                alert_found = self.authenticate_and_fetch_alerts()
+                
+                if not alert_found:
+                    self.initial_run = False
+                    no_alerts_counter += 1
+                else:
+                    no_alerts_counter = 0
+                
+                # Calculate the number of seconds remaining in the current minute
+                current_time = datetime.now()
                 seconds_until_next_minute = 60 - current_time.second
                 seconds_until_next_minute += OFFSET
                 wait_time = seconds_until_next_minute % 11
-            self.print_log(f"Checking again in {wait_time}s.")
-            # Sleep for the remaining seconds until the next minute
-            time.sleep(wait_time)
+                if wait_time < 2:
+                    time.sleep(wait_time+1)
+                    seconds_until_next_minute = 60 - current_time.second
+                    seconds_until_next_minute += OFFSET
+                    wait_time = seconds_until_next_minute % 11
+                self.print_log(f"Checking again in {wait_time}s.")
+                # Sleep for the remaining seconds until the next minute
+                time.sleep(wait_time)
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                self.kill_daemon = True
+                
 
     def process_new_alerts_daemon(self):
         while not self.start:
@@ -306,8 +322,12 @@ class TradingViewAlertsHandler:
         last_checked_id = 0
         loop_count = 0
         while not self.kill_daemon:
-            last_checked_id = self.check_database_update(last_checked_id)
-            time.sleep(TIMEOUT)  # Sleep for 1s
+            try:
+                last_checked_id = self.check_database_update(last_checked_id)
+                time.sleep(TIMEOUT)  # Sleep for 1s
+            except Exception as e:
+                print(e)
+                self.kill_daemon = True
     
     def print_log(self, text):
         current_time = datetime.now()
@@ -329,8 +349,10 @@ class TradingViewAlertsHandler:
         self.start = True
 
         # Loop until killed
-        while True:
-            time.sleep(420)
+        while not self.kill_daemon:
+            time.sleep(5)
+        
+        # kill all threads
 
 def background_thread(target, args_list):
     args = ()
@@ -349,5 +371,12 @@ def delete_last_line(num_lines=1):
 
 
 if __name__ == "__main__":
-    handler = TradingViewAlertsHandler()
-    handler.run()
+    while True:
+        try:
+            handler = TradingViewAlertsHandler()
+            handler.run()
+            # if background thread crashes
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            print("Restarting the script...")
+            time.sleep(10)  # Wait for 10 seconds before restarting
