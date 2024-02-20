@@ -1,5 +1,5 @@
 __author__ = "Patrick Kantorski"
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 __maintainer__ = "Patrick Kantorski"
 __status__ = "Development Build"
 
@@ -159,6 +159,7 @@ class TradingViewAlertsHandler:
                 if retry_match:
                     retry_time = datetime.strptime(retry_match.group(1), '%Y-%m-%dT%H:%M:%S.%fZ')
                     wait_duration = (retry_time - datetime.utcnow()).total_seconds()
+                    wait_duration += 10  # Adding 10 seconds buffer
                     if wait_duration > 0:
                         print(f"Retrying after {wait_duration} seconds...")
                         time.sleep(wait_duration)
