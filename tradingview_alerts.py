@@ -11,6 +11,7 @@ import sqlite3
 import base64
 import importlib
 import urllib.parse
+import re
 from queue import Queue
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -153,15 +154,27 @@ class TradingViewAlertsHandler:
                 break  # Break out of the loop if successful
             except Exception as e:
                 print(f"Error: {str(e)}")
-                retries += 1
-                if retries < max_retries:
-                    delay = base_delay * (2 ** retries)
-                    print(f"Retrying in {delay} seconds...")
-                    time.sleep(delay)
+                # Check if the error message contains a retry time
+                retry_match = re.search(r"Retry after (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)", str(e))
+                if retry_match:
+                    retry_time = datetime.strptime(retry_match.group(1), '%Y-%m-%dT%H:%M:%S.%fZ')
+                    wait_duration = (retry_time - datetime.utcnow()).total_seconds()
+                    if wait_duration > 0:
+                        print(f"Retrying after {wait_duration} seconds...")
+                        time.sleep(wait_duration)
+                    else:
+                        print("Invalid retry time. Retrying after the base delay...")
+                        time.sleep(base_delay)
                 else:
-                    print("Max retries reached. Exiting.")
-                    self.kill_daemon = True
-                    break
+                    retries += 1
+                    if retries < max_retries:
+                        delay = base_delay * (2 ** retries)
+                        print(f"Retrying in {delay} seconds...")
+                        time.sleep(delay)
+                    else:
+                        print("Max retries reached. Exiting.")
+                        #self.kill_daemon = True
+                        break
         
         
         
