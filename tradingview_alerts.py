@@ -31,7 +31,7 @@ class TradingViewAlertsHandler:
         self.SQL_COLUMNS = ['message_id', 'msg_timestamp', 'alert']
         self.SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
         self.EMAIL_SENDER = "TradingView <noreply@tradingview.com>"
-        self.N_DAYS = 2
+        self.N_DAYS = 20
         self.start = False
         self.kill_daemon = False
         self.initial_run = True
@@ -139,14 +139,16 @@ class TradingViewAlertsHandler:
         conn.commit()
         
         # Retrieve the last processed message_id from the database
-        cursor.execute('SELECT MAX(msg_timestamp) FROM alerts')
-        last_msg_timestamp_str = cursor.fetchone()[0]
+        cursor.execute('SELECT MAX(timestamp) FROM alerts')
+        last_timestamp_str = cursor.fetchone()[0]
+
+        #print("last_timestamp_str: "+last_timestamp_str)
         
         # If no records exist in the database yet, set a default value far in the past
-        if last_msg_timestamp_str is None:
-            last_msg_timestamp = n_days_ago
+        if last_timestamp_str is None:
+            last_timestamp = n_days_ago
         else:
-            last_msg_timestamp = datetime.strptime(last_msg_timestamp_str, '%a, %d %b %Y %H:%M:%S %z')
+            last_timestamp = datetime.strptime(last_timestamp_str, '%Y-%m-%d %H:%M:%S')
 
         # Initialize backoff parameters
         retries = 0
@@ -158,7 +160,7 @@ class TradingViewAlertsHandler:
         while retries < max_retries:
             try:
                 # Your existing code for fetching messages
-                query = 'after:' + last_msg_timestamp.strftime('%Y/%m/%d %H:%M:%S') + ' from:' + self.EMAIL_SENDER
+                query = 'after:' + last_timestamp.strftime('%s') + ' from:' + self.EMAIL_SENDER
                 results = service.users().messages().list(userId='me', q=query).execute()
                 messages = results.get('messages', [])
                 
@@ -197,7 +199,7 @@ class TradingViewAlertsHandler:
             for message in messages:
                 msg_id = message['id']
     
-                # Check if the message timestamp is not already stored in the database
+                # Check if the message id is not already stored in the database
                 cursor.execute('SELECT * FROM alerts WHERE message_id = ?', (msg_id,))
                 if cursor.fetchone():
                     continue  # Skip if this email is already in the database
