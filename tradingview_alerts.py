@@ -1,5 +1,5 @@
 __author__ = "Patrick Kantorski"
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 __maintainer__ = "Patrick Kantorski"
 __status__ = "Development Build"
 
@@ -31,10 +31,11 @@ class TradingViewAlertsHandler:
         self.SQL_COLUMNS = ['message_id', 'msg_timestamp', 'alert']
         self.SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
         self.EMAIL_SENDER = "TradingView <noreply@tradingview.com>"
-        self.N_DAYS = 10
+        self.N_DAYS = 2
         self.start = False
         self.kill_daemon = False
         self.initial_run = True
+        self.alert_found = False
         self.message_queue = Queue()
         self.telegram_path = os.path.dirname(os.path.abspath(__file__))
         sys.path.append(self.telegram_path)
@@ -117,7 +118,7 @@ class TradingViewAlertsHandler:
         strategy_table_line = ''
         for i in range(len(strategy_table_lines)):
             line = strategy_table_lines[i]
-            if 'timestamp' in line:
+            if ('timestamp' in line) or ('time_close' in line):
                 line = line.replace("TEXT", "DATETIME")
             
             if i == len(strategy_table_lines)-1:
@@ -137,6 +138,16 @@ class TradingViewAlertsHandler:
 
         conn.commit()
         
+        # Retrieve the last processed message_id from the database
+        cursor.execute('SELECT MAX(msg_timestamp) FROM alerts')
+        last_msg_timestamp_str = cursor.fetchone()[0]
+        
+        # If no records exist in the database yet, set a default value far in the past
+        if last_msg_timestamp_str is None:
+            last_msg_timestamp = n_days_ago
+        else:
+            last_msg_timestamp = datetime.strptime(last_msg_timestamp_str, '%a, %d %b %Y %H:%M:%S %z')
+
         # Initialize backoff parameters
         retries = 0
         max_retries = 5
@@ -147,8 +158,8 @@ class TradingViewAlertsHandler:
         while retries < max_retries:
             try:
                 # Your existing code for fetching messages
-                query = 'after:' + n_days_ago.strftime('%Y/%m/%d') + ' from:' + self.EMAIL_SENDER
-                results = service.users().messages().list(userId='me', q='after:' + n_days_ago.strftime('%Y/%m/%d')).execute()
+                query = 'after:' + last_msg_timestamp.strftime('%Y/%m/%d %H:%M:%S') + ' from:' + self.EMAIL_SENDER
+                results = service.users().messages().list(userId='me', q=query).execute()
                 messages = results.get('messages', [])
                 
                 break  # Break out of the loop if successful
@@ -179,7 +190,7 @@ class TradingViewAlertsHandler:
         
         
         
-        alert_found = False
+        self.alert_found = False
         
         if len(messages) > 0:
             
@@ -202,7 +213,7 @@ class TradingViewAlertsHandler:
                     msg_data = msg['payload']['body']['data']
                     msg_data = base64.urlsafe_b64decode(msg_data.encode('ASCII')).decode('utf-8')
                     
-                    alert_found = True
+                    self.alert_found = True
                     print(f'Subject: {subject}, Date: {date}\n')
                     
                     start_index = None
@@ -238,12 +249,10 @@ class TradingViewAlertsHandler:
                     )
                     conn.commit()
         
-        if not alert_found:
+        if not self.alert_found:
             self.print_log('No new alerts found.')
     
         conn.close()
-    
-        return alert_found
 
     def check_database_update(self, last_checked_id):
         # Connect to the SQLite database
@@ -280,6 +289,7 @@ class TradingViewAlertsHandler:
                 ## self.notify_command(line)
                 #self.message_queue.put(line)
             
+            self.initial_run = False
             # Update the last_checked_id with the latest message_id
             last_checked_id = new_records[-1][0]
     
@@ -294,18 +304,16 @@ class TradingViewAlertsHandler:
             time.sleep(1)
         
         OFFSET = 5 # seconds
-        alert_found = False
         no_alerts_counter = 0
         while not self.kill_daemon:
             # to ensure no alerts found and recheck messages are not spamming
-            if not alert_found and no_alerts_counter > 0:
+            if not self.alert_found and no_alerts_counter > 0:
                 delete_last_line(2)
             
             try:
-                alert_found = self.authenticate_and_fetch_alerts()
+                self.authenticate_and_fetch_alerts()
                 
-                if not alert_found:
-                    self.initial_run = False
+                if not self.alert_found:
                     no_alerts_counter += 1
                 else:
                     no_alerts_counter = 0
@@ -315,7 +323,7 @@ class TradingViewAlertsHandler:
                 seconds_until_next_minute = 60 - current_time.second
                 seconds_until_next_minute += OFFSET
                 wait_time = seconds_until_next_minute % 11
-                if wait_time < 2:
+                if wait_time < 3:
                     time.sleep(wait_time+1)
                     seconds_until_next_minute = 60 - current_time.second
                     seconds_until_next_minute += OFFSET
