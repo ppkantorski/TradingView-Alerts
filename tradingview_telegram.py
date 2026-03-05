@@ -1,6 +1,6 @@
-__author__ = "Patrick Kantorski"
+__author__ = "ppkantorski"
 __version__ = "1.0.1"
-__maintainer__ = "Patrick Kantorski"
+__maintainer__ = "ppkantorski"
 __status__ = "Development Build"
 
 import os, sys
